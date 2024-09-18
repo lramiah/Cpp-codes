@@ -1,0 +1,303 @@
+//HW3
+//Due: 11:59PM, Wednesday Oct. 11
+//Reminder: Midterm Exam will be held on Tuesday, Oct. 17
+#include <iostream>
+#include <list>
+#include <map>
+#include <string>
+#include <tuple>
+#include <iomanip>
+using namespace std;
+
+class course {
+public:
+	string name;//CIS554
+	int section;//1
+	int credits;//3
+	string grade;//A-
+	course() {}
+	course(string n, int s, int c, string g) { name = n; section = s; credits = c; grade = g; }
+
+	bool operator<(const course& c) const;
+	bool operator==(const course& c) const;
+	float num_grade();
+
+};
+
+float course::num_grade() {
+	map<string, float> M{
+		{"A", 4.0f},
+		{"A-", 3.667f},
+		{"B+",  3.333f},
+		{"B",	3.0f},
+		{"B-" ,  2.667f},
+		{"C+" ,  2.333f},
+		{"C",	2.0f},
+		{"C-" ,  1.667f},
+		{"D",	1.0f},
+		{"D-" , 0.667f},
+		{"F",	0.0f}
+	};
+	return M[grade];
+}
+bool course::operator<(const course& c) const {
+	return (name < c.name);
+}
+bool course::operator==(const course& c) const {
+	return (name == c.name);
+
+}
+
+class DBclass {
+public:
+	map<int, tuple<int, float, list<course*> >* >* pDB;
+	DBclass();//default constructor
+	DBclass(const initializer_list<pair<int, initializer_list<course>>>& I);//Initializer list
+
+	DBclass(const DBclass& D);//Copy Constructor
+
+	//////Implement copy constructor, copy assignment, move constructor, move assignment, destructor, RemoveFirst.
+	//////Also implement operator<< to allow cout << DBclassObject<<endl;
+
+	~DBclass();//Destructor
+	void operator=(const DBclass& D);//Copy Assignment (i.e., Lvalue operator=)
+	DBclass(DBclass&& D);//move constructor
+	void operator=(DBclass&& D); //Move Assignment (i.e., Rvalue operator=)
+
+	DBclass RemoveFirst();//Return a DBclass which is the same as *this,
+	//// but the removal of the first element of the map.
+};
+
+
+DBclass::DBclass() {//default constructor
+	pDB = new  map<int, tuple<int, float, list<course*> >* >{};
+	cout << "Constructor" << endl;
+}
+
+
+DBclass::DBclass(const initializer_list<pair<int, initializer_list<course>>>& I) : DBclass() { //initializer list
+	for (auto& i : I) {
+		auto semester{ i.first };
+		(*pDB)[semester] = new tuple<int, float, list<course*>>{ 0, 0.0f, {} };
+		auto& R1{ *(*pDB)[semester] };//R1 is tuple
+		auto& R2{ get<2>(R1) };//R2 is list
+		int credit{ 0 };
+		float gpa{ 0.0f };
+
+		for (auto j : i.second) {
+			R2.push_back(new course{ j });
+			gpa = (gpa * credit + j.credits * j.num_grade()) / (credit + j.credits);
+			credit += j.credits;
+		}
+		get<0>(R1) = credit;
+		get<1>(R1) = gpa;
+	}
+
+	cout << "Initializer List" << endl;
+}
+
+DBclass::DBclass(const DBclass& D) : DBclass{} {//Copy Constructor
+	auto& R1{ *pDB };
+	auto& R2{ *D.pDB };
+	for (auto i : R2) {
+		R1[i.first] = new tuple<int, float, list<course*>>{ 0, 0.0f, {} };
+		get<0>(*(*pDB)[i.first]) = get<0>(*i.second);
+		get<1>(*(*pDB)[i.first]) = get<1>(*i.second);
+
+		for (auto j : get<2>(*i.second)) {
+			get<2>(*(*pDB)[i.first]).push_back(j);
+
+		}
+
+	}
+	cout << "Copy Constructor" << endl;
+}
+
+
+void DBclass::operator=(const DBclass& D) { //copy assignment
+	auto& R1 = *pDB;
+	auto it1 = R1.begin();
+	while (it1 != R1.end()) {
+		auto& R3{ get<2>(*it1->second) };
+		auto it2 = R3.begin();
+		while (it2 != R3.end()) {
+			delete *it2;
+			it2 = R3.erase(it2);
+		}
+		//R3.clear();
+		delete it1->second;
+		//it1 = R1.erase(it1);
+		//cout << it1->first << " " << it1->second << " " << R1[it1->first] << " " << endl; //20221 0000025500A15A40 0000025500A15A40
+		//break;
+	}
+	pDB->clear();
+
+	auto& R2{ *D.pDB };
+	for (auto i : R2) {
+		(*pDB)[i.first] = new tuple<int, float, list<course*>>{ 0, 0.0f, {} };
+		
+		get<0>(*(*pDB)[i.first]) = get<0>(*i.second);
+		get<1>(*(*pDB)[i.first]) = get<1>(*i.second);
+
+		for (auto j : get<2>(*i.second)) {
+			get<2>(*(*pDB)[i.first]).push_back(j);
+
+		}
+
+	}
+	cout << "Copy Assignment" << endl;
+
+}
+
+
+DBclass :: DBclass(DBclass&& D) { //move constructor
+	pDB = D.pDB;
+	D.pDB = nullptr;
+
+	cout << "Move Constructor" << endl;
+
+}
+
+
+void DBclass :: operator=(DBclass&& D) { //Move Assignment (i.e., Rvalue operator=)
+	if ( (pDB != nullptr) || (pDB == nullptr && pDB->size() != 0 )) {
+		auto& R1 = *pDB;
+		auto it1 = R1.begin();		
+		while (it1 != R1.end()) {
+			auto& R3{ get<2>(*it1->second) };
+			auto it2 = R3.begin();
+			while (it2 != R3.end()) {
+				delete *it2;
+				//it2 = R3.erase(it2);
+			}
+			R3.clear();
+			delete it1->second;
+			//it1 = R1.erase(it1);
+			//cout << it1->first << " " << it1->second << " " << R1[it1->first] << " " << endl; //20221 0000025500A15A40 0000025500A15A40
+			//break;
+		}
+		pDB->clear();
+	}
+
+	pDB = D.pDB; 
+	D.pDB = nullptr;
+
+	cout << "Move Assignment" << endl;
+
+}
+
+DBclass :: ~DBclass() {
+	auto& R1 = *pDB;
+	auto it1 = R1.begin();
+	while (it1 != R1.end()) {
+		auto& R3{ get<2>(*it1->second) };
+		auto it2 = R3.begin();
+		while (it2 != R3.end()) {
+			delete* it2;
+			//it2 = R3.erase(it2);
+		}
+		R3.clear();
+		delete it1->second;
+		//it1 = R1.erase(it1);
+		//cout << it1->first << " " << it1->second << " " << R1[it1->first] << " " << endl; //20221 0000025500A15A40 0000025500A15A40
+		//break;
+	}
+	pDB->clear();
+	delete pDB;
+
+	cout << "Destructor" << endl;
+
+}
+
+DBclass DBclass::RemoveFirst() {
+	DBclass temp{ *this };
+	auto& R1{ *temp.pDB };
+	//cout << temp << endl;
+	auto it1 = R1.begin();
+	cout << it1->first << endl;
+
+	auto& R3{ get<2>(*it1->second) };
+	auto it2 = R3.begin();
+	while (it2 != R3.end()) {
+		delete *it2;
+		it2 = R3.erase(it2); //importatnt to do this for list 
+	}
+	delete it1->second;
+	//R1.erase(it1->first);
+	cout << R1.begin()->first << endl;
+
+	//cout << it1->first << " " << it1->second << " " << R1[it1->first] << " " << endl; //20221 0000025500A15A40 0000025500A15A40
+	//break;	
+
+	//pDB->clear();
+
+	/*int count = 0;
+	for (auto it1 = R1.begin(); it1 != R1.end(); ) {
+		for (auto& j : get<2>(*it1->second)) {
+			delete j;
+		}
+		delete it1->second;
+		it1 = R1.erase(it1);
+		count += count;
+		if (count == 1) break;
+	}*/
+
+	cout << "Remove First" << endl;
+
+	return temp;
+
+}
+
+
+
+ostream& operator<<(ostream& str, const course& c);
+
+ostream& operator<<(ostream& str, const DBclass& D);
+
+
+
+int main() {
+	course C1("CIS554", 1, 3, "A-"), C2("CSE674", 1, 3, "B+"), C3("MAT296", 8, 4, "A"), C4("WRT205", 5, 3, "A"), C5("CSE661", 1, 3, "B+"),
+		C6("PSY205", 11, 3, "A-"), C7("MAT297", 8, 4, "B+"), C8("CIS341", 1, 3, "A-"), C9("CIS453", 1, 3, "A");
+
+	DBclass DB1{ {20222, {C1, C2, C3}} , {20221, {C4, C5, C6}}, {20231, {C7, C8, C9}} }; // call initializer
+	cout << "DB1: " << endl << DB1 << endl;
+
+	DBclass DB2{ DB1 }; // call copy constructor - both assignment and declaration
+	cout << "DB2: " << endl << DB2 << endl;
+
+
+	DBclass DB3{};
+	DB3 = DB2; // copy assignment
+	cout << "DB3: " << endl << DB3 << endl;
+
+	DB3 = DB2.RemoveFirst(); // move assignment 
+	cout << DB3.pDB->size() << endl;
+	cout << "DB3: " << endl << DB3 << endl;
+
+
+	return 0;
+}
+
+ostream& operator<<(ostream& str, const DBclass& D) {
+	auto& R1{ *D.pDB };
+	for (auto& i : R1) {
+		str << "Semester: " << i.first << endl;
+		str << "GPA: " << get<1>(*i.second) << endl;
+		str << "Credits: " << get<0>(*i.second) << endl;
+
+		for (auto j : get<2>(*i.second)) {
+			str << "(" << j->name << " " << j->section << " " << j->credits << " " << j->grade << ") ";
+		}
+
+		str << endl << endl;
+	}
+
+	return str;
+}
+
+ostream& operator<<(ostream& str, const course& c) {
+	str << "(" << c.name << " " << c.section << " " << c.credits << " " << c.grade << ")";
+	return str;
+}
+

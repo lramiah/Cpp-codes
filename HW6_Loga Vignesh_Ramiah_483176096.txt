@@ -1,0 +1,332 @@
+// Name: Loga Vignesh Ramiah
+// SUID: 483176096
+//HW6.  Due: Tuesday, Nov. 28 at 11:59pm
+
+#include <iostream>
+#include <map>
+#include <list>
+#include <vector>
+#include <set>
+#include <unordered_set>
+#include <functional>
+
+using namespace std;
+
+
+class node {
+public:
+	int value;
+	node* next;
+	node(int i) { value = i; next = nullptr; }//construct
+	node() { next = nullptr; }//default constructor
+
+};
+
+class LinkedList {
+public:
+	node* head;
+	LinkedList(int n, int m);
+	LinkedList() { head = nullptr; } //default constructor
+	void Sort();//You need to change this to allow the Sort examples in the main functions.
+	//You can re-use code from lecture 2023_09_07 .
+	void Sort(function<bool(int, int)> f);
+
+};
+
+
+LinkedList::LinkedList(int n, int m) {//constructor of class LinkedList (with the notation of LinkedList:: )
+	head = nullptr;
+	for (int i = 0; i < n; ++i) {
+		//node* p = new node{ rand() % m }; also OK
+		node* p{ new node{ rand() % m } };//rand() % m will be a random value in 0 ... m-1
+		//rand() returns an int out of all possible int value
+		//% mod
+		p->next = head;
+		head = p;
+	}
+}
+
+
+void LinkedList::Sort() {
+	if (!head || !head->next) return;
+	node* p1{ head };
+	while (p1->next) {//p1->next != nullptr
+		node* p2 = p1->next;
+		node* pmin = p1;
+		int min{ p1->value };
+		while (p2) {//while p2 is not nullptr
+			if (p2->value < min) {
+				min = p2->value;
+				pmin = p2;
+			}
+			p2 = p2->next;
+		}
+		if (pmin != p1) {//swap pmin->value with p1->value
+			pmin->value = p1->value;
+			p1->value = min;
+		}
+		p1 = p1->next;
+	}
+}
+
+void LinkedList::Sort(function<bool(int, int)> f) {
+	if (!head || !head->next) return;
+	node* p1{ head };
+	while (p1->next) {
+		node* p2 = p1->next;
+		node* pmin = p1;
+		while (p2) {
+			if (f(p2->value, pmin->value)) {
+				pmin = p2;
+			}
+			p2 = p2->next;
+		}
+		if (pmin != p1) {
+			swap(pmin->value, p1->value);
+			/*int min = pmin->value;
+			pmin->value = p1->value;
+			p1->value = min;*/
+		}
+		p1 = p1->next;
+	}
+}
+
+
+class myFunctor {
+public:
+	bool operator() (const int* i1, const int* i2) const;
+	bool operator() (const map <int*, string, myFunctor>* m1, const map <int*, string, myFunctor>* m2) const;
+	bool operator() (const map < map <int*, string, myFunctor>*, set <int>*, myFunctor>& mm1, const map < map <int*, string, myFunctor>*, set <int>*, myFunctor>& mm2) const;
+
+};
+
+bool myFunctor::operator() (const int* i1, const int* i2) const {
+	return *i1 < *i2;
+}
+
+bool myFunctor::operator() (const map <int*, string, myFunctor>* m1, const map <int*, string, myFunctor>* m2) const {
+	int sum1{ 0 }, sum2{ 0 };
+	for (auto& i : *m1) { sum1 += *i.first; }
+	for (auto& j : *m2) { sum2 += *j.first; }
+	return sum1 < sum2;
+}
+
+bool myFunctor::operator() (const map < map <int*, string, myFunctor>*, set <int>*, myFunctor>& mm1, const map < map <int*, string, myFunctor>*, set <int>*, myFunctor>& mm2) const {
+	int sum1{ 0 }, sum2{ 0 };
+	for (auto& i1 : mm1) {
+		for (auto& j1 : *i1.first) {
+			sum1 += *j1.first;
+		}
+
+		for (auto& k1 : *i1.second) {
+			sum1 += k1;
+		}
+	}
+
+	for (auto& i2 : mm2) {
+		for (auto& j2 : *i2.first) {
+			sum2 += *j2.first;
+		}
+
+		for (auto& k2 : *i2.second) {
+			sum2 += k2;
+		}
+	}
+
+	return sum1 < sum2;
+
+}
+
+
+
+class myFunctor1 {
+public:
+	bool operator() (const map < map <int*, string, myFunctor>*, set <int>*, myFunctor>& mm1, const map < map <int*, string, myFunctor>*, set <int>*, myFunctor>& mm2) const;
+	size_t operator()(const map < map <int*, string, myFunctor>*, set <int>*, myFunctor>& mm1) const;
+
+};
+
+bool myFunctor1::operator() (const map < map <int*, string, myFunctor>*, set <int>*, myFunctor>& mm1, const map < map <int*, string, myFunctor>*, set <int>*, myFunctor>& mm2) const {
+	int sum1{ 0 }, sum2{ 0 };
+	for (auto& i1 : mm1) {
+		for (auto& j1 : *i1.first) {
+			sum1 += *j1.first;
+		}
+
+		for (auto& k1 : *i1.second) {
+			sum1 += k1;
+		}
+	}
+
+	for (auto& i2 : mm2) {
+		for (auto& j2 : *i2.first) {
+			sum2 += *j2.first;
+		}
+
+		for (auto& k2 : *i2.second) {
+			sum2 += k2;
+		}
+	}
+
+	return sum1 == sum2;
+
+}
+
+size_t myFunctor1::operator()(const map < map <int*, string, myFunctor>*, set <int>*, myFunctor>& mm1) const {
+	int sum1{ 0 };
+	for (auto& i1 : mm1) {
+		for (auto& j1 : *i1.first) {
+			sum1 += *j1.first;
+		}
+
+		for (auto& k1 : *i1.second) {
+			sum1 += k1;
+		}
+	}
+
+	return hash<int>{}(sum1);
+
+}
+
+
+ostream& operator<<(ostream& str, const set<map < map <int*, string, myFunctor>*, set <int>*, myFunctor>, myFunctor>& S) {
+	str << "<" << endl;
+	for (auto& i : S) { // i is element in outer set S
+
+		str << "{" << endl;
+		for (auto& i1 : i) { // i1 is element in outer map
+
+			str << "{ ";
+			for (auto& j1 : *i1.first) { // j1 is element in inner map
+
+				str << *j1.first << " " << j1.second << " ";
+
+			}
+			str << "}";
+			str << "  < ";
+			for (auto& k1 : *i1.second) { //k1 is element in inner set
+
+				str << k1 << " ";
+
+			}
+			str << ">  ";
+
+		}
+		str << endl << "}" << endl;
+
+	}
+	str << ">" << endl;
+	return str;
+
+}
+
+ostream& operator<<(ostream& str, const unordered_set<map < map <int*, string, myFunctor>*, set <int>*, myFunctor>, myFunctor1, myFunctor1>& H) {
+
+	for (int i = 0; i < H.bucket_count(); ++i) {
+		str << "Bucket " << i << ":" << endl;
+		auto it{ H.begin(i) };
+		while (it != H.end(i)) {
+			str << "{" << endl;
+			for (auto& i : *it) { // i is element in outer set S	
+				str << "{ ";
+				for (auto& j1 : *i.first) { // j1 is element in inner map
+					str << *j1.first << " " << j1.second << " ";
+				}
+				str << "}";
+				str << "  < ";
+				for (auto& k1 : *i.second) { //k1 is element in inner set
+					str << k1 << " ";
+				}
+				str << ">  ";
+			}
+			str << endl << "}";
+			it++;
+		}
+		str << endl;
+	}
+	return str;
+
+}
+
+ostream& operator<<(ostream& str, const LinkedList& L) {
+	node* p{ L.head };
+	while (p) {//the same as while (p != nullptr)
+		str << p->value << " ";
+		p = p->next;
+	}
+
+	return str;
+
+}
+
+
+
+int main() {
+
+	set<map < map <int*, string, myFunctor>*, set <int>*, myFunctor>, myFunctor> S1{
+
+	{
+		{new map<int*,string, myFunctor>{{new int{1},"india"}, {new int{2},"states"}, {new int{4},"china"}}, new set<int>{1,8,3}},
+		{new map<int*,string, myFunctor>{{new int{4},"mango"}, {new int{3},"apple"}, {new int{2},"berry"}}, new set<int>{2,5,1}},
+		{new map<int*,string, myFunctor>{{new int{3},"carrot"}, {new int{7},"brinjal"}, {new int{0},"onion"}}, new set<int>{1,0,6}}
+	},
+
+	{
+		{new map<int*,string, myFunctor>{{new int{0},"dary"}, {new int{1},"mike"}, {new int{5},"sam"}}, new set<int>{4,9,2}},
+		{new map<int*,string, myFunctor>{{new int{2},"dury"}, {new int{9},"nathan"}, {new int{0},"vola"}}, new set<int>{0,9,8}},
+		{new map<int*,string, myFunctor>{{new int{3},"bin"}, {new int{5},"clock"}, {new int{7},"bottle"}}, new set<int>{3,8,4}}
+	},
+
+	{
+		{new map<int*,string, myFunctor>{{new int{1},"phone"}, {new int{4},"mobile"}, {new int{7},"speak"}}, new set<int>{3,2,1}},
+		{new map<int*,string, myFunctor>{{new int{8},"talk"}, {new int{6},"listen"}, {new int{9},"ball"}}, new set<int>{2,0,6}},
+		{new map<int*,string, myFunctor>{{new int{2},"cricket"}, {new int{8},"hockey"}, {new int{6},"tennis"}}, new set<int>{2,9,0}}
+	}
+
+	};
+
+	cout << S1 << endl;
+
+
+	unordered_set<map < map <int*, string, myFunctor>*, set <int>*, myFunctor>, myFunctor1, myFunctor1> H1
+	{
+
+	{
+		{new map<int*,string, myFunctor>{{new int{1},"india"}, {new int{2},"states"}, {new int{4},"china"}}, new set<int>{1,8,3}},
+		{new map<int*,string, myFunctor>{{new int{4},"mango"}, {new int{3},"apple"}, {new int{2},"berry"}}, new set<int>{2,5,1}},
+		{new map<int*,string, myFunctor>{{new int{3},"carrot"}, {new int{7},"brinjal"}, {new int{0},"onion"}}, new set<int>{1,0,6}}
+	},
+
+	{
+		{new map<int*,string, myFunctor>{{new int{0},"dary"}, {new int{1},"mike"}, {new int{5},"sam"}}, new set<int>{4,9,2}},
+		{new map<int*,string, myFunctor>{{new int{2},"dury"}, {new int{4},"nathan"}, {new int{0},"vola"}}, new set<int>{0,9,8}},
+		{new map<int*,string, myFunctor>{{new int{3},"bin"}, {new int{5},"clock"}, {new int{7},"bottle"}}, new set<int>{3,8,4}}
+	},
+
+	{
+		{new map<int*,string, myFunctor>{{new int{1},"phone"}, {new int{4},"mobile"}, {new int{7},"speak"}}, new set<int>{3,2,1}},
+		{new map<int*,string, myFunctor>{{new int{8},"talk"}, {new int{6},"listen"}, {new int{9},"ball"}}, new set<int>{2,0,6}},
+		{new map<int*,string, myFunctor>{{new int{2},"cricket"}, {new int{4},"hockey"}, {new int{6},"tennis"}}, new set<int>{2,9,0}}
+	}
+
+	};
+
+	cout << H1 << endl;
+
+	LinkedList L1{ 20, 10 };
+	cout << L1 << endl;
+	L1.Sort();
+	cout << L1 << endl;
+
+	L1.Sort([](int a, int b) {return a % 3 < b % 3; });
+	cout << L1 << endl;
+	L1.Sort(greater<int>{});
+	cout << L1 << endl;
+
+
+	return 0;
+}
+
+
+
+

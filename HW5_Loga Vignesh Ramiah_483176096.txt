@@ -1,0 +1,276 @@
+// Name : Loga Vignesh Ramiah
+// SUID : 483176096
+//HW5 Due: 11:59pm, Wednesday, Nov. 8
+/*
+
+For the class triangle, implement construcotr, copy constructor,
+move constructor, copy assignment,
+move assignment, destructor, FirtThreeRow.
+Also, implement operator<< to allow cout of triangle object.
+See the sample screehshot for output requirement
+
+Only smart pointers are allowed.
+
+No raw pointers allowed.
+No extra helper functions allowed.
+No external structures allowed.
+
+*/
+
+#include <iostream>
+#include <memory>
+using namespace std;
+
+class node {
+public:
+	int value;
+	shared_ptr<node> Lchild;
+	shared_ptr<node> Rchild;
+	weak_ptr<node> next;
+	node(int i) : value(i) {}
+	node() {  }
+
+};
+
+class triangle {
+public:
+	shared_ptr<node> top;
+
+	triangle(int n, int m);
+	triangle() { cout << "Default Constructor\n\n"; }
+	triangle(const triangle& t);//copy constructor
+	void operator=(const triangle& t); //copy assignment
+	~triangle();//destructor
+	triangle(triangle&& t);//move constructor
+	void operator=(triangle&& t);//move assignment
+	triangle FirstThreeRow();//return a triagle which is the first three rows of *this.
+	//Assume the triangle *this have three or more than three rows.
+};
+
+triangle::triangle(int n, int m) { //constructor
+	top = nullptr;
+	shared_ptr<node>tail;
+	for (int i = 1; i <= n; i++) {
+		for (int j = 1; j <= i; j++) {
+			shared_ptr<node> p{ make_shared<node>(rand() % m) };
+			p->Lchild = p;
+			p->next = top;
+			if (i == 1 && j == 1) {	
+				tail = p;
+			}
+			top = p;
+			if (i == n && j == n) {
+				tail->next.lock() = top;
+				tail->Lchild = tail;
+			}
+		}
+	}
+
+	shared_ptr<node> p1, p2;
+	p1 = top;
+	p2 = top->next.lock();
+	for (int i = 1; i <= n; i++) {
+
+		for (int j = 1; j <= i; j++) {
+			if (i==n) {
+				p1->Lchild = nullptr;
+				p1->Rchild = nullptr;
+				p1 = p1->next.lock();
+			}
+			else if (i==j && i!=n) {
+				p1->Lchild = p2;
+				p1->Rchild = p2->next.lock();
+				p1 = p1->next.lock();
+				p2 = p2->next.lock()->next.lock();
+				
+			}
+			else {
+				p1->Lchild = p2;
+				p1->Rchild = p2->next.lock();
+				p1 = p1->next.lock();
+				p2 = p2->next.lock();
+			}
+
+		}
+
+	}
+
+	cout << "Constructor" << endl << endl;
+
+}
+
+triangle::triangle(const triangle& t) : triangle() {//copy constructor
+	int level = 0;
+	shared_ptr<node> current=t.top;
+
+	while (current!=nullptr) {
+		current = current->Lchild;
+		level = level+1;
+	}
+	//current.reset();
+
+	triangle t1(level, 10);
+
+	shared_ptr<node> s1 = t1.top;
+	shared_ptr<node> s2 = t.top;
+
+	int nodes = level * (level + 1) / 2;
+	//shared_ptr<node> p;
+	for (int i = 1; i <= nodes; i++) {
+
+		if (i == nodes) {
+			s1->value = s2->value;
+			
+			s1=s1->next.lock();
+			//break;
+			//s1.reset();
+		}
+		else {
+			s1->value = s2->value;
+			s1 = s1->next.lock();
+			s2 = s2->next.lock();
+		}
+
+	}
+	top = t1.top;
+	s1.reset();
+	s2.reset();
+	t1.top.reset();
+
+	cout << "Copy Constructor" << endl << endl;
+
+}
+
+void triangle::operator=(const triangle& t) { //copy assignment
+	top.reset(); //delete
+
+	int level = 0;
+	shared_ptr<node> current = t.top;
+
+	while (current != nullptr) {
+		current = current->Lchild;
+		level = level + 1;
+	}
+	//current.reset();
+
+	triangle t1(level, 10);
+
+	shared_ptr<node> s1 = t1.top;
+	shared_ptr<node> s2 = t.top;
+
+	int nodes = level * (level + 1) / 2;
+	//shared_ptr<node> p;
+	for (int i = 1; i <= nodes; i++) {
+
+		if (i == nodes) {
+			s1->value = s2->value;
+
+			s1 = s1->next.lock();
+			//break;
+			//s1.reset();
+		}
+		else {
+			s1->value = s2->value;
+			s1 = s1->next.lock();
+			s2 = s2->next.lock();
+		}
+
+	}
+	top = t1.top;
+	s1.reset();
+	s2.reset();
+	t1.top.reset();
+
+	cout << "Copy Assignment" << endl<< endl;
+
+}
+
+triangle::~triangle() { //destructor
+	top.reset();
+	cout << "Destructor" << endl << endl;
+}
+
+triangle::triangle(triangle&& t) {  //move constructor
+	top = t.top;
+	t.top.reset();
+	cout << "Move constructor" << endl << endl;
+}
+
+void triangle::operator=(triangle&& t) { //move assignment
+	top.reset(); //delete
+
+	top = t.top;
+	t.top.reset();
+	cout << "Move assignment" << endl << endl;
+}
+
+triangle triangle::FirstThreeRow() { //return a triagle which is the first three rows of *this.
+	triangle temp{ *this };
+	shared_ptr<node> p=temp.top;
+	for (int i = 1; i <= 3; i++) {
+		for (int j = 1; j <= i; j++) {
+			if (i == 3 && j!=3) {
+				p->Lchild = nullptr;
+				p->Rchild = nullptr;
+				p = p->next.lock();
+
+			}
+			else if(i == 3 && j == 3){
+				p->Lchild = nullptr;
+				p->Rchild = nullptr;
+				//p -> next = temp.top;;
+
+			}
+			else {
+				p = p->next.lock();
+			}
+			
+		}
+	}
+
+	cout << "FirstThreeRows" << endl << endl;
+	return temp;
+
+}
+
+
+ostream& operator<<(ostream& str, const triangle& T);
+
+int main() {
+
+	triangle T1(7, 10);
+	cout << T1 << "\n\n";
+
+	triangle T2{ T1 };
+	cout << T2 << "\n\n";
+
+	triangle T3;
+	T3 = T2;
+	cout << T3 << "\n\n";
+
+	T3 = T2.FirstThreeRow();
+	cout << T3 << "\n\n";
+
+	return 0;
+}
+
+
+ostream& operator<<(ostream& str, const triangle& T) {
+	shared_ptr<node> current = T.top;
+	int n = 1; // Current row number
+
+	while (current) {
+		for (int i = 1; i <= n; i++) {
+			if (current) {
+				str << current->value << " ";
+				current = current->next.lock();
+			}
+		}
+		str << "\n";
+		n++;
+	}
+
+	return str;
+}
+
+
